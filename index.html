@@ -43,13 +43,13 @@
 
   <div class="grid9" id="mods"><div class="loading" style="grid-column:1/-1">数据加载中…</div></div>
 
-  <div class="sec-hd" style="margin:10px 6px 2px"><span class="bar"></span><b>六肖列表</b><span class="k">近 6 期</span></div>
+  <div class="sec-hd" style="margin:10px 6px 2px"><span class="bar"></span><b>六肖列表</b><span class="k">近 8 期</span></div>
   <div class="lx" id="lx"></div>
 
-  <div class="sec-hd" style="margin:10px 6px 2px"><span class="bar"></span><b>单双</b><span class="k">近 6 期</span></div>
+  <div class="sec-hd" style="margin:10px 6px 2px"><span class="bar"></span><b>单双</b><span class="k">近 8 期</span></div>
   <div class="ds" id="ds"></div>
 
-  <div class="sec-hd" style="margin:10px 6px 2px"><span class="bar"></span><b>一肖一码</b><span class="k">近 6 期</span></div>
+  <div class="sec-hd" style="margin:10px 6px 2px"><span class="bar"></span><b>一肖一码</b><span class="k">近 4 期</span></div>
   <div class="pick" id="pick"></div>
 
   <div class="sec-hd" style="margin:10px 6px 2px"><span class="bar"></span><b>历史开奖</b><span class="k">近 5 期</span></div>
@@ -130,44 +130,64 @@
     document.getElementById("poem-text").textContent = "「" + r.poem + "」";
     document.getElementById("poem-src").textContent = (r.issue ? r.issue + "期 · " : "") + (poems.name || "正版诗象") + " · 仅供资料参考";
   }
-  function renderLiuxiao(arr) {
+  function specOf(row, rmap) {
+    var sp = (row && row.special) || {};
+    if (sp.c || sp.z) return sp;
+    var m = rmap && rmap[S.shortIssue(row.issue)];
+    return m ? { z: m.z, c: m.c } : null;
+  }
+  function hasIssue(arr, iss) {
+    return !!(arr && (arr.rows || []).some(function (r) { return String(r.issue) === String(iss); }));
+  }
+  function renderLiuxiao(arr, rmap) {
     var box = document.getElementById("lx"); if (!box) return;
-    var rows = S.rowsAsc(arr, 6);
+    var rows = S.rowsAsc(arr, 8);
+    var latest = rows.length ? parseInt(rows[rows.length - 1].issue, 10) : 0;
+    if (latest && !hasIssue(arr, latest + 1)) { rows = rows.slice(-7).concat([{ issue: latest + 1, list: [], special: {}, _pending: true }]); }
     if (!rows.length) { box.innerHTML = '<div class="lx-row"><span class="lx-iss">—</span><span class="lx-list">暂无数据</span><span class="lx-open"></span></div>'; return; }
     box.innerHTML = rows.map(function (r) {
-      var sp = r.special || {}, has = !!(sp.c || sp.z), hit = false;
+      var sp = r._pending ? {} : (specOf(r, rmap) || {}), has = !!(sp.c || sp.z), hit = false;
       var items = (r.list || []).map(function (x) {
         var hh = has && sp.z && x.z === sp.z; if (hh) hit = true;
         return '<span class="' + (hh ? "hit" : "") + '">' + x.z + '</span>' + S.pad2(x.c);
       });
-      var list = items.slice(0, 3).join(".") + (items.length > 3 ? "<br>" + items.slice(3).join(".") : "");
+      var list = r._pending ? '<span style="color:#8A7458">待更新</span>' : (items.slice(0, 3).join(".") + (items.length > 3 ? "<br>" + items.slice(3).join(".") : ""));
       var open = has ? ("开:" + (sp.z || "") + S.pad2(sp.c || "")) : "开:? 00";
       var st = has ? (hit ? "中" : "错") : "待";
       return '<div class="lx-row"><span class="lx-iss">' + S.shortIssue(r.issue) + '期</span><span class="lx-list">' + list + '</span><span class="lx-open">' + open + '<span class="st' + (st === "待" ? " w" : "") + '">' + st + '</span></span></div>';
     }).join("");
   }
-  function renderDanshuang(arr) {
+  function renderDanshuang(arr, rmap) {
     var box = document.getElementById("ds"); if (!box) return;
-    var rows = S.rowsAsc(arr, 6);
+    var rows = S.rowsAsc(arr, 8);
+    var latestD = rows.length ? parseInt(rows[rows.length - 1].issue, 10) : 0;
+    if (latestD && !hasIssue(arr, latestD + 1)) { rows = rows.slice(-7).concat([{ issue: latestD + 1, oddEven: "", zodiacs: [], special: {}, _pending: true }]); }
     if (!rows.length) { box.innerHTML = '<div class="ds-row">暂无数据</div>'; return; }
     box.innerHTML = rows.map(function (r) {
-      var sp = r.special || {}, has = !!(sp.c || sp.z);
+      var sp = r._pending ? {} : (specOf(r, rmap) || {}), has = !!(sp.c || sp.z);
       var hit = false;
       if (has) {
         var c = parseInt(sp.c, 10);
         hit = ((r.oddEven === "单数") === (c % 2 === 1)) || (r.zodiacs || []).indexOf(sp.z) >= 0;
       }
       var st = has ? (hit ? "中" : "错") : "待";
-      return '<div class="ds-row">' + S.shortIssue(r.issue) + '期:单双 <span class="hl">【' + (r.oddEven || "") + '+' + (r.zodiacs || []).join("") + '】</span> 開:<span class="num">' + (has ? (sp.z || "") + S.pad2(sp.c || "") : "? 00") + '</span><span class="badge' + (st === "待" ? " w" : "") + '">' + st + '</span></div>';
+      var body = r._pending ? "待更新" : ((r.oddEven || "") + '+' + (r.zodiacs || []).join(""));
+      return '<div class="ds-row">' + S.shortIssue(r.issue) + '期:单双 <span class="hl">【' + body + '】</span> 開:<span class="num">' + (has ? (sp.z || "") + S.pad2(sp.c || "") : "? 00") + '</span><span class="badge' + (st === "待" ? " w" : "") + '">' + st + '</span></div>';
     }).join("");
   }
   function renderPick(rowsIn, specialMap) {
     var box = document.getElementById("pick"); if (!box) return;
-    var rows = S.rowsAsc({ rows: rowsIn || [] }, 6);
+    var pickArr = { rows: rowsIn || [] };
+    var rows = S.rowsAsc(pickArr, 4);
+    var latestP = rows.length ? parseInt(rows[rows.length - 1].issue, 10) : 0;
+    if (latestP && !hasIssue(pickArr, latestP + 1) && rows.length < 4) { rows = rows.concat([{ issue: latestP + 1, _pending: true }]); }
     if (!rows.length) { box.innerHTML = '<div class="pick-card"><div class="pick-hd">暂无数据</div></div>'; return; }
     box.innerHTML = rows.map(function (r) {
       var sp = specialMap[S.shortIssue(r.issue)] || null;
       var label, cls = "";
+      if (r._pending) {
+        return '<div class="pick-card"><div class="pick-hd">' + S.shortIssue(r.issue) + '期:内幕一肖一码<span class="hl">【待更新】</span></div><div class="pick-wm">资料图位 · 占位水印</div><div class="pick-row"><span class="k">七肖:</span><span class="zv">待更新</span><span class="nv"><span class="k2">⑦码:</span>—</span></div><div class="pick-row"><span class="k">五肖:</span><span class="zv">待更新</span><span class="nv"><span class="k2">⑤码:</span>—</span></div><div class="pick-row"><span class="k">三肖:</span><span class="zv">待更新</span><span class="nv"><span class="k2">③码:</span>—</span></div></div>';
+      }
       if (sp && sp.z) {
         var hitTier = 0;
         if ((r.three && r.three.zodiac || []).indexOf(sp.z) >= 0) hitTier = 3;
@@ -235,9 +255,13 @@
           function add(iss, nums) { if (!iss || !nums || nums.length < 7) return; var last = nums[6]; if (last && last.z) smap[S.shortIssue(iss)] = { z: last.z, c: last.c }; }
           var mm = S.mdCompat(md); add(mm.issue, mm.nums && mm.nums.length === 7 ? mm.nums : S.numsOf(mm));
           (mm.history || []).forEach(function (h2) { add(h2.issue, h2.nums); });
+          (draw.games || []).forEach(function (g) {
+            function addIf(iss, nums) { if (!iss || !nums || nums.length < 7) return; var k = S.shortIssue(iss); if (smap[k]) return; var last = nums[6]; if (last && last.z) smap[k] = { z: last.z, c: last.c }; }
+            addIf(g.issue, g.nums); (g.history || []).forEach(function (h2) { addIf(h2.issue, h2.nums); });
+          });
         })();
-        renderLiuxiao(blocks.liuxiao);
-        renderDanshuang(blocks.danshuang);
+        renderLiuxiao(blocks.liuxiao, smap);
+        renderDanshuang(blocks.danshuang, smap);
         renderPick(pick.rows, smap);
       } catch (eR) { if (window.console && console.log) console.log("block render error", eR); }
       tick(); setInterval(tick, 1000);
