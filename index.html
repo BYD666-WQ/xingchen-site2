@@ -159,7 +159,7 @@
       renderAll(blocks);
       tick(); setInterval(tick, 1000);
       var load = document.querySelector("#mods .loading"); if (load) load.remove();
-      if (!CFG && !D.newhk && !D.newmo && !D.hk) S.showErr("网络数据未取到，请检查网络后重试");
+      if (!CFG && !(D.newhk && D.newhk.issue) && !(D.newmo && D.newmo.issue) && !(D.hk && D.hk.issue)) S.showErr("开奖数据未取到（网络或接口异常），点重试");
     }).catch(function (e) {
       try { renderAll({}); tick(); } catch (x) {}
       S.showErr(e.message || "加载失败");
