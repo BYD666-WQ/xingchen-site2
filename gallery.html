@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="color-scheme" content="light only">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>星辰彩讯 · 图库</title>
+<link rel="stylesheet" href="theme.css">
+</head>
+<body>
+<div class="app">
+  <header class="page-hd"><a class="back" href="index.html">‹</a><b>图库</b><span class="s">新澳 / 香港</span></header>
+  <div class="err" id="err"></div>
+  <div class="note">图库为公开资料图（主站只读图床，jsDelivr 加速）。仅供资料参考，不含任何承诺内容。</div>
+  <div class="sec-hd"><span class="bar"></span><b>最新图集</b><span class="k" id="gal-count">—</span></div>
+  <div class="gal" id="gal"><div class="loading" style="grid-column:1/-1">图库加载中…</div></div>
+  <div class="foot">图源：主站公开资料 · 只读引用</div>
+</div>
+<nav class="tab">
+  <a href="index.html"><span class="i">⌂</span>首页</a>
+  <a href="ziliao.html"><span class="i">▤</span>资料</a>
+  <a href="guilv.html"><span class="i">∿</span>走势</a>
+  <a class="on" href="gallery.html"><span class="i">▦</span>图库</a>
+  <a href="index.html#zod"><span class="i">◎</span>生肖</a>
+</nav>
+<script src="app.js"></script>
+<script>
+(function () {
+  "use strict";
+  var S = window.SD;
+  function boot() {
+    S.get("data/tuku.json").then(function (t) {
+      var items = (t && t.items) || [];
+      items = items.filter(function (x) { return x.tabId === "macau" || x.tabId === "hk"; });
+      items.sort(function (a, b) { return (b.issue || 0) - (a.issue || 0) || (a.order || 0) - (b.order || 0); });
+      items = items.slice(0, 30);
+      document.getElementById("gal-count").textContent = items.length + " 张";
+      document.getElementById("gal").innerHTML = items.map(function (x) {
+        var u = S.imgUrl(x.localPath || x.image || "") || "";
+        var t2 = (x.tabId === "hk" ? "香港" : "新澳") + (x.issue ? S.shortIssue(x.issue) + "期" : "");
+        return '<a href="' + u + '" target="_blank" rel="noopener">' + S.imgTag(x.localPath || x.image || '', x.title || t2) + '<div class="cap">' + (x.title || t2) + '</div></a>';
+      }).join("");
+    }).catch(function (e) { S.showErr(e.message || "图库加载失败"); });
+  }
+  boot();
+})();
+</script>
+</body>
+</html>

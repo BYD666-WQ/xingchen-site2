@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="color-scheme" content="light only">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>星辰彩讯 · 开奖资料站</title>
+<link rel="stylesheet" href="theme.css">
+</head>
+<body>
+<div class="app">
+  <header class="brand">
+    <div class="nm"><span class="b">星辰</span><span class="r">彩讯</span></div>
+    <div class="green">开奖<br>资料</div>
+    <div class="seal">手机<br>版</div>
+  </header>
+
+  <section class="kaijiang">
+    <div class="kj-left"><div class="p" id="ob-issue">---期开</div><div class="rec">开奖记录</div></div>
+    <div class="kj-right"><div class="balls" id="ob-balls"></div></div>
+  </section>
+
+  <nav class="tabs" id="tabs">
+    <button class="on" data-k="newhk">新港<small>NEW HK</small></button>
+    <button data-k="newmo">新澳<small>MACAU</small></button>
+    <button data-k="hk">香港<small>HK</small></button>
+  </nav>
+
+  <div class="datebar">
+    <span class="k">今</span><span id="today">--</span>
+    <span id="draw-hint">21:34 开奖</span>
+    <span class="cd" id="cd">--:--:--</span>
+  </div>
+
+  <div class="err" id="err"></div>
+
+  <div class="banner">
+    <div class="big">本期<em>九板块</em>资料 · 已更新</div>
+    <div class="sub" id="banner-sub">五肖五码 · 三头中特 · 七尾中特 · 平特①肖 · 死杀三肖</div>
+    <span class="crown">♛</span>
+  </div>
+
+  <div class="grid9" id="mods"><div class="loading" style="grid-column:1/-1">数据加载中…</div></div>
+
+  <div class="sec-hd" style="margin:10px 6px 2px"><span class="bar"></span><b>历史开奖</b><span class="k">近 5 期</span></div>
+  <div class="rows" id="hist"></div>
+
+  <section class="poem" id="poem">
+    <span class="t">玄机诗象</span>
+    <p id="poem-text">「—」</p>
+    <small id="poem-src">数据加载中…</small>
+  </section>
+
+  <div class="sec-hd" style="margin:10px 6px 2px"><span class="bar"></span><b>生肖号码表</b><span class="k">2026 样例</span></div>
+  <div class="zod" id="zod"></div>
+
+  <div class="foot">星辰彩讯 · 开奖资料站（数据来自主站只读接口）· 开奖结果以官方公布为准</div>
+</div>
+
+<nav class="tab">
+  <a class="on" href="index.html"><span class="i">⌂</span>首页</a>
+  <a href="ziliao.html"><span class="i">▤</span>资料</a>
+  <a href="guilv.html"><span class="i">∿</span>走势</a>
+  <a href="gallery.html"><span class="i">▦</span>图库</a>
+  <a href="index.html#zod"><span class="i">◎</span>生肖</a>
+</nav>
+
+<script src="app.js"></script>
+<script>
+(function () {
+  "use strict";
+  var S = window.SD, D = { newhk: null, newmo: null, hk: null }, CUR = "newhk", CFG = null;
+  var SPEC = { newhk: { name: "新港", k: "newhk" }, newmo: { name: "新澳", k: "newmo" }, hk: { name: "香港", k: "hk" } };
+
+  function setBalls(container, nums, attrs) {
+    if (!container) return;
+    container.innerHTML = S.ballHtml(nums, attrs);
+  }
+  function renderOpen() {
+    var d = D[CUR] || {};
+    var nums = (d.nums && d.nums.length) ? d.nums : S.numsOf(d);
+    var iss = d.issue != null ? d.issue : "";
+    document.getElementById("ob-issue").textContent = (iss ? S.shortIssue(iss) : "--") + "期开";
+    setBalls(document.getElementById("ob-balls"), nums, S.attrMap());
+    var sp = nums[6] && nums[6].z ? nums[6].z : "";
+    S.setLastSpecialZ(sp);
+    var hint = { newhk: "21:34", newmo: "21:30", hk: "21:30" };
+    document.getElementById("draw-hint").textContent = (S.drawTimes(CFG)[CUR] || {}).time || hint[CUR];
+  }
+  function renderHist() {
+    var d = D[CUR] || {}, out = "";
+    var hist = ((d.history || []).slice(0, 5));
+    if (!hist.length) { out = '<div class="row"><span class="iss">—</span><span class="t">暂无历史数据</span></div>'; }
+    hist.forEach(function (h) {
+      var nums = h.nums || [];
+      var balls = nums.map(function (x, i) {
+        return '<span class="v" style="color:' + (S.colorOf(x.c) === "r" ? "#D40000" : (S.colorOf(x.c) === "b" ? "#0044CC" : "#067A2E")) + '">' + S.pad2(x.c) + '</span>';
+      }).join(" ");
+      out += '<div class="row" style="padding-right:6px"><span class="iss">' + S.shortIssue(h.issue) + '期:</span><span class="c" style="flex:1;font-size:10.5px">' + balls + '</span><span class="r">' + (nums[6] && nums[6].z ? "特" + nums[6].z : "") + '</span></div>';
+    });
+    document.getElementById("hist").innerHTML = out;
+  }
+  function renderMods(blocks) {
+    var box = document.getElementById("mods"), out = "";
+    S.BLOCKS.forEach(function (b, i) {
+      var arr = blocks[b.key], row = S.lastRow(arr);
+      var p = row ? S.shortIssue(row.issue) + "期 " + b.summary(row) : "待更新";
+      var pend = !row || !row.special || (!row.special.c && !row.special.z);
+      var hit = pend ? null : b.hit(row);
+      var hitHtml = hit === true ? '<span class="hit">中</span>' : (hit === false ? '<span class="hit w">错</span>' : '');
+      out += '<a class="mod" href="ziliao.html#' + b.key + '"><b>' + b.name + '</b><span class="p">' + p + '</span>' + hitHtml + '</a>';
+    });
+    box.innerHTML = out;
+  }
+  function renderPoem(poems) {
+    var rows = (poems && poems.rows) || [];
+    if (!rows.length) { document.getElementById("poem-text").textContent = "「暂无诗句」"; document.getElementById("poem-src").textContent = "数据待更新"; return; }
+    var r = rows.slice().sort(function (a, b) { return (b.issue || 0) - (a.issue || 0); })[0];
+    document.getElementById("poem-text").textContent = "「" + r.poem + "」";
+    document.getElementById("poem-src").textContent = (r.issue ? r.issue + "期 · " : "") + (poems.name || "正版诗象") + " · 仅供资料参考";
+  }
+  function renderZod() {
+    var box = document.getElementById("zod");
+    if (box) box.innerHTML = S.zodiacTableHtml();
+  }
+  function renderAll(blocks) {
+    renderOpen(); renderHist(); renderMods(blocks); renderZod();
+  }
+  function tick() {
+    var t = S.nextDraw(CUR, CFG), left = t - new Date();
+    var cd = document.getElementById("cd");
+    if (cd) cd.textContent = S.fmtCountdown(left);
+  }
+  function show(k) {
+    CUR = k;
+    S.els("#tabs button").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-k") === k); });
+    renderAll(window.__blocks || {});
+    tick();
+  }
+  function boot() {
+    var want = ["data/site-config.json","data/draw.json","data/manual-draw.json","data/poems.json","data/num-attrs.json"]
+      .concat(S.BLOCKS.map(function (b) { return b.file; }));
+    Promise.all(want.map(function (p) { return S.get(p).catch(function () { return null; }); })).then(function (rs) {
+      CFG = rs[0]; var draw = rs[1] || { games: [] }, md = rs[2] || {}, poems = rs[3], attrs = rs[4] || {};
+      S.setAttrs(attrs);
+      var blocks = {};
+      S.BLOCKS.forEach(function (b, i) { blocks[b.key] = rs[5 + i]; });
+      window.__blocks = blocks;
+      var cur = S.mdCompat(md);
+      D.newhk = cur;
+      var games = {};
+      (draw.games || []).forEach(function (g) { games[g.rule] = g; });
+      D.newmo = games.Macau || null;
+      D.hk = games.HongKong || null;
+      var today = new Date();
+      document.getElementById("today").textContent = (today.getMonth() + 1) + "月" + today.getDate() + "日 " + ["星期日","星期一","星期二","星期三","星期四","星期五","星期六"][today.getDay()];
+      renderPoem(poems);
+      renderAll(blocks);
+      tick(); setInterval(tick, 1000);
+      var load = document.querySelector("#mods .loading"); if (load) load.remove();
+    }).catch(function (e) { S.showErr(e.message || "加载失败"); });
+  }
+  S.els("#tabs button").forEach(function (b) { b.addEventListener("click", function () { show(b.getAttribute("data-k")); }); });
+  boot();
+})();
+</script>
+</body>
+</html>

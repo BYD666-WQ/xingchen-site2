@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="color-scheme" content="light only">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>星辰彩讯 · 资料大全</title>
+<link rel="stylesheet" href="theme.css">
+</head>
+<body>
+<div class="app">
+  <header class="page-hd"><a class="back" href="index.html">‹</a><b>资料大全</b><span class="s">九板块 · 实时数据</span></header>
+  <div class="err" id="err"></div>
+  <div class="note">九板块数据来自主站公开接口（只读）。命中判断由本页按各板块规则实时计算；「中/错」以特开号码或生肖为准，仅供资料参考。</div>
+  <div id="blocks"><div class="loading">数据加载中…</div></div>
+  <div class="sec-hd"><span class="bar"></span><b>内幕资料</b><span class="k">内幕·单双三肖</span></div>
+  <div class="zblock" id="ziliao-extra">
+    <div class="zb-h">内幕【提前公开】<span>manual-ziliao</span></div>
+    <div class="rule">主站资料区数据，按最新期展示；不含任何承诺或诱导内容。</div>
+    <div id="ziliao-rows"></div>
+  </div>
+  <div class="foot">数据来自主站只读接口 · 仅供资料参考</div>
+</div>
+<nav class="tab">
+  <a href="index.html"><span class="i">⌂</span>首页</a>
+  <a class="on" href="ziliao.html"><span class="i">▤</span>资料</a>
+  <a href="guilv.html"><span class="i">∿</span>走势</a>
+  <a href="gallery.html"><span class="i">▦</span>图库</a>
+  <a href="index.html#zod"><span class="i">◎</span>生肖</a>
+</nav>
+<script src="app.js"></script>
+<script>
+(function () {
+  "use strict";
+  var S = window.SD;
+  function blockHtml(b, arr) {
+    var rows = S.latestRows(arr, 6);
+    var rule = (arr && (arr.rule || arr.note)) || "";
+    var html = '<div class="zblock" id="' + b.key + '"><div class="zb-h">' + b.name + '<span>' + b.sub + '</span></div>';
+    if (rule) html += '<div class="rule">' + rule + '</div>';
+    if (!rows.length) html += '<div class="zrow"><span class="c">暂无数据</span></div>';
+    rows.forEach(function (r) {
+      var sp = r.special || {};
+      var pending = !sp.c && !sp.z;
+      var hit = pending ? null : b.hit(r);
+      html += '<div class="zrow"><span class="iss">' + S.shortIssue(r.issue) + '期</span>' +
+        '<span class="c">' + b.summary(r) + '</span>' +
+        '<span class="res">开:' + (sp.z || "待开") + (sp.c ? S.pad2(sp.c) : "") + '</span>' +
+        '<span class="badge' + (hit === true ? "" : " w") + '">' + (hit === true ? "中" : (hit === false ? "错" : "待")) + '</span></div>';
+    });
+    return html + '</div>';
+  }
+  function boot() {
+    var reqs = S.BLOCKS.map(function (b) { return S.get(b.file).catch(function () { return null; }); });
+    reqs.push(S.get("data/manual-ziliao.json").catch(function () { return null; }));
+    reqs.push(S.get("data/num-attrs.json").catch(function () { return null; }));
+    Promise.all(reqs).then(function (rs) {
+      var attrs = rs[rs.length - 1] || {}; S.setAttrs(attrs);
+      var html = "";
+      S.BLOCKS.forEach(function (b, i) { html += blockHtml(b, rs[i]); });
+      document.getElementById("blocks").innerHTML = html;
+      var z = rs[rs.length - 2] || {};
+      var rows = (z.rows || []).slice(0, 12);
+      document.getElementById("ziliao-rows").innerHTML = rows.length ? rows.map(function (r) {
+        var res = r.result || {};
+        var content = (r.oddEven || "") + " " + ((r.threeZodiac || []).join(""));
+        var hit = "";
+        if (res.c || res.z) hit = '<span class="res">开:' + (res.z || "") + S.pad2(res.c || "") + '</span>';
+        return '<div class="zrow"><span class="iss">' + S.shortIssue(r.issue) + '期</span><span class="c">' + (content || r.text || "") + '</span>' + hit + '</div>';
+      }).join("") : '<div class="zrow"><span class="c">暂无数据</span></div>';
+      if (location.hash) {
+        var t = document.getElementById(location.hash.slice(1));
+        if (t) t.scrollIntoView();
+      }
+    }).catch(function (e) { S.showErr(e.message || "加载失败"); });
+  }
+  boot();
+})();
+</script>
+</body>
+</html>
