@@ -4,14 +4,15 @@
 <meta charset="UTF-8">
 <meta name="color-scheme" content="light only">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>星辰彩讯 · 开奖资料站</title>
+<title>95至尊 · 新香港 开奖资料</title>
+<link rel="icon" href="data:,">
 <link rel="stylesheet" href="theme.css">
 </head>
 <body>
 <div class="app">
   <header class="brand">
-    <div class="nm"><span class="b">星辰</span><span class="r">彩讯</span></div>
-    <div class="green">开奖<br>资料</div>
+    <div class="nm"><span class="b">95</span><span class="r">至尊</span></div>
+    <div class="green">新香港<br>开奖资料</div>
     <div class="seal">手机<br>版</div>
   </header>
 
@@ -54,7 +55,7 @@
   <div class="sec-hd" style="margin:10px 6px 2px"><span class="bar"></span><b>生肖号码表</b><span class="k">2026 样例</span></div>
   <div class="zod" id="zod"></div>
 
-  <div class="foot">星辰彩讯 · 开奖资料站（数据来自主站只读接口）· 开奖结果以官方公布为准</div>
+  <div class="foot">95至尊 · 新香港开奖资料（数据来自公开接口）· 开奖结果以官方公布为准</div>
 </div>
 
 <nav class="tab">
@@ -158,7 +159,11 @@
       renderAll(blocks);
       tick(); setInterval(tick, 1000);
       var load = document.querySelector("#mods .loading"); if (load) load.remove();
-    }).catch(function (e) { S.showErr(e.message || "加载失败"); });
+      if (!CFG && !D.newhk && !D.newmo && !D.hk) S.showErr("网络数据未取到，请检查网络后重试");
+    }).catch(function (e) {
+      try { renderAll({}); tick(); } catch (x) {}
+      S.showErr(e.message || "加载失败");
+    });
   }
   S.els("#tabs button").forEach(function (b) { b.addEventListener("click", function () { show(b.getAttribute("data-k")); }); });
   boot();

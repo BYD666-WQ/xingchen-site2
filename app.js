@@ -11,21 +11,30 @@
   var WAVE_NAME = { r: "红", b: "蓝", g: "绿" };
   var DAY_CN = ["星期日","星期一","星期二","星期三","星期四","星期五","星期六"];
 
-  function get(path) {
+  function raceFetch(path) {
     var bases = [MAIN, CDN, RAW];
-    var i = 0;
-    function go() {
-      if (i >= bases.length) return Promise.reject(new Error("data " + path));
-      var url = bases[i++] + path + "?t=" + Date.now();
-      var AC = (typeof AbortController !== "undefined") ? new AbortController() : null;
-      var TO = AC ? setTimeout(function () { try { AC.abort(); } catch (e) {} }, 5000) : null;
-      return fetch(url, { cache: "no-store", signal: AC ? AC.signal : undefined }).then(function (r) {
-        if (TO) clearTimeout(TO);
-        if (!r.ok) throw new Error("http " + r.status);
-        return r.json();
-      }).catch(function () { if (TO) clearTimeout(TO); return go(); });
-    }
-    return go();
+    return new Promise(function (resolve, reject) {
+      var done = false, left = bases.length;
+      bases.forEach(function (base) {
+        var AC = (typeof AbortController !== "undefined") ? new AbortController() : null;
+        var TO = AC ? setTimeout(function () { try { AC.abort(); } catch (e) {} }, 4000) : null;
+        fetch(base + path + "?t=" + Date.now(), { cache: "no-store", signal: AC ? AC.signal : undefined })
+          .then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.json(); })
+          .then(function (j) { if (!done) { done = true; if (TO) clearTimeout(TO); resolve(j); } else if (TO) clearTimeout(TO); })
+          .catch(function (e) { left--; if (TO) clearTimeout(TO); if (left === 0 && !done) reject(e); });
+      });
+    });
+  }
+
+  function get(path) {
+    var key = "s2c:" + path, cached = null;
+    try { var raw = localStorage.getItem(key); if (raw) cached = JSON.parse(raw); } catch (e) {}
+    var live = raceFetch(path).then(function (j) {
+      try { localStorage.setItem(key, JSON.stringify(j)); } catch (e) {}
+      return j;
+    });
+    if (cached) { live.catch(function () {}); return Promise.resolve(cached); }
+    return live;
   }
 
   function dec(enc) {
@@ -200,7 +209,10 @@
 
   function showErr(msg) {
     var e = el("#err");
-    if (e) { e.style.display = "block"; e.textContent = "数据加载提示：" + msg; }
+    if (e) {
+      e.style.display = "block";
+      e.innerHTML = "数据加载遇到问题：" + (msg || "网络异常") + ' <a href="javascript:location.reload()" style="margin-left:8px;background:#D40000;color:#FFE86A;padding:1px 8px;border:1px solid #111;text-decoration:none">重试</a>';
+    }
     var l = el("#loading"); if (l) l.style.display = "none";
   }
 
