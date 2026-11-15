@@ -159,3 +159,19 @@ a{color:inherit;text-decoration:none}
 .pick-row .zv .hit{background:#FFE500;color:#D40000;padding:0 1px}
 .pick-row .nv{color:#D40000;flex:none;width:44%;text-align:left;font-size:11px}
 .pick-row .nv .k2{color:#111;width:auto}
+/* ===== 更多资料（杀码料 / 绝杀二尾 / 必赢双波 / 成语平特） ===== */
+.mtab{margin:6px;border:3px solid #111;background:#fff;box-shadow:3px 3px 0 rgba(0,0,0,.25)}
+.mtab-h{display:grid;grid-template-columns:44px 54px 54px 62px 48px 1fr;background:#FFE500;border-bottom:3px solid #111;font-weight:900;font-size:10.5px;text-align:center}
+.mtab-h span{padding:4px 2px;border-left:1px solid #C9A000}
+.mtab-h span:first-child{border-left:0}
+.mtab-r{display:grid;grid-template-columns:44px 54px 54px 62px 48px 1fr;font-weight:900;font-size:11px;text-align:center;border-top:2px dotted #E2C98A}
+.mtab-r:first-of-type{border-top:0}
+.mtab-r span{padding:5px 2px;border-left:1px solid #EADFC6}
+.mtab-r span:first-child{border-left:0}
+.mtab-r .k{color:#0044CC}
+.mtab-r .v{color:#D40000}
+.mtab-r .o{color:#067A2E;font-size:10.5px}
+.mtab-r .o.pending{color:#8A7458}
+.m-sub{display:flex;align-items:center;gap:6px;margin:8px 6px 4px;font-weight:900;font-size:13px}
+.m-sub .bar{width:5px;height:13px;background:#1E63B8;border:1px solid #111}
+.m-sub .k{margin-left:auto;font-size:9px;color:#7A6000}
