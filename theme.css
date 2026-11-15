@@ -130,3 +130,32 @@ a{color:inherit;text-decoration:none}
 .err{margin:8px 6px;padding:8px;border:3px solid #D40000;background:#FFF0F0;color:#900;font-size:11px;font-weight:900;display:none}
 .loading{margin:10px 6px;padding:10px;text-align:center;font-weight:900;color:#7A6000}
 .foot{font-size:9px;color:#7A6000;text-align:center;padding:8px 10px 2px;font-weight:700}
+/* ===== 新增资料区（六肖列表 / 单双 / 一肖一码） ===== */
+.lx{margin:6px;border:3px solid #111;background:#fff;box-shadow:3px 3px 0 rgba(0,0,0,.25)}
+.lx-row{display:grid;grid-template-columns:52px 1fr 92px;align-items:center;gap:4px;padding:5px 6px;border-top:2px dotted #E2C98A;font-weight:900;font-size:12px}
+.lx-row:first-child{border-top:0}
+.lx-iss{color:#111;font-size:12.5px;white-space:nowrap}
+.lx-list{color:#D40000;font-size:11.5px;line-height:1.5;letter-spacing:-.2px;word-break:break-all}
+.lx-list .hit{background:#FFE500;color:#D40000;padding:0 1px}
+.lx-open{text-align:right;color:#D40000;font-size:11px;line-height:1.4;white-space:nowrap}
+.lx-open .st{display:inline-block;background:#D40000;color:#FFE86A;border:1px solid #111;font-size:9px;padding:0 3px;margin-left:2px}
+.lx-open .st.w{background:#9E9E9E;color:#fff}
+.ds{margin:6px;border:3px solid #111;background:#fff;box-shadow:3px 3px 0 rgba(0,0,0,.25);padding:2px 0}
+.ds-row{display:block;padding:6px 7px;border-top:2px dotted #E2C98A;font-size:12.5px;font-weight:900;line-height:1.5}
+.ds-row:first-child{border-top:0}
+.ds-row .hl{display:inline-block;background:#FFE500;color:#111;padding:0 3px;line-height:1.35}
+.ds-row .num{color:#D40000}
+.ds-row .badge{display:inline-block;background:#D40000;color:#FFE86A;border:1px solid #111;font-size:9px;padding:0 3px;margin-left:3px}
+.ds-row .badge.w{background:#9E9E9E;color:#fff}
+.pick{margin:6px 0 0}
+.pick-card{margin:0 6px 8px;border:3px solid #111;background:#fff;box-shadow:3px 3px 0 rgba(0,0,0,.25);overflow:hidden}
+.pick-hd{background:linear-gradient(100deg,#1E63B8,#2A8FD6);color:#fff;padding:6px 8px;font-size:13px;font-weight:900;line-height:1.4;border-bottom:3px solid #111}
+.pick-hd .hl{background:#FFE500;color:#111;padding:0 3px;margin:0 1px}
+.pick-wm{height:26px;background:repeating-linear-gradient(135deg,#EDEDED 0 6px,#E3E3E3 6px 12px);display:flex;align-items:center;justify-content:center;color:#9A9A9A;font-size:9px;font-weight:900;letter-spacing:2px;border-bottom:2px dashed #D40000;text-shadow:0 0 2px #fff}
+.pick-row{display:flex;align-items:baseline;gap:4px;padding:4px 7px;border-top:2px dotted #E2C98A;font-size:11.5px;font-weight:900;line-height:1.55;flex-wrap:wrap}
+.pick-row:first-of-type{border-top:0}
+.pick-row .k{color:#111;flex:none;width:38px}
+.pick-row .zv{color:#D40000;flex:1;min-width:0;word-break:break-all}
+.pick-row .zv .hit{background:#FFE500;color:#D40000;padding:0 1px}
+.pick-row .nv{color:#D40000;flex:none;width:44%;text-align:left;font-size:11px}
+.pick-row .nv .k2{color:#111;width:auto}

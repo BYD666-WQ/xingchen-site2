@@ -43,6 +43,15 @@
 
   <div class="grid9" id="mods"><div class="loading" style="grid-column:1/-1">数据加载中…</div></div>
 
+  <div class="sec-hd" style="margin:10px 6px 2px"><span class="bar"></span><b>六肖列表</b><span class="k">近 6 期</span></div>
+  <div class="lx" id="lx"></div>
+
+  <div class="sec-hd" style="margin:10px 6px 2px"><span class="bar"></span><b>单双</b><span class="k">近 6 期</span></div>
+  <div class="ds" id="ds"></div>
+
+  <div class="sec-hd" style="margin:10px 6px 2px"><span class="bar"></span><b>一肖一码</b><span class="k">近 6 期</span></div>
+  <div class="pick" id="pick"></div>
+
   <div class="sec-hd" style="margin:10px 6px 2px"><span class="bar"></span><b>历史开奖</b><span class="k">近 5 期</span></div>
   <div class="rows" id="hist"></div>
 
@@ -121,6 +130,67 @@
     document.getElementById("poem-text").textContent = "「" + r.poem + "」";
     document.getElementById("poem-src").textContent = (r.issue ? r.issue + "期 · " : "") + (poems.name || "正版诗象") + " · 仅供资料参考";
   }
+  function renderLiuxiao(arr) {
+    var box = document.getElementById("lx"); if (!box) return;
+    var rows = S.rowsAsc(arr, 6);
+    if (!rows.length) { box.innerHTML = '<div class="lx-row"><span class="lx-iss">—</span><span class="lx-list">暂无数据</span><span class="lx-open"></span></div>'; return; }
+    box.innerHTML = rows.map(function (r) {
+      var sp = r.special || {}, has = !!(sp.c || sp.z), hit = false;
+      var items = (r.list || []).map(function (x) {
+        var hh = has && sp.z && x.z === sp.z; if (hh) hit = true;
+        return '<span class="' + (hh ? "hit" : "") + '">' + x.z + '</span>' + S.pad2(x.c);
+      });
+      var list = items.slice(0, 3).join(".") + (items.length > 3 ? "<br>" + items.slice(3).join(".") : "");
+      var open = has ? ("开:" + (sp.z || "") + S.pad2(sp.c || "")) : "开:? 00";
+      var st = has ? (hit ? "中" : "错") : "待";
+      return '<div class="lx-row"><span class="lx-iss">' + S.shortIssue(r.issue) + '期</span><span class="lx-list">' + list + '</span><span class="lx-open">' + open + '<span class="st' + (st === "待" ? " w" : "") + '">' + st + '</span></span></div>';
+    }).join("");
+  }
+  function renderDanshuang(arr) {
+    var box = document.getElementById("ds"); if (!box) return;
+    var rows = S.rowsAsc(arr, 6);
+    if (!rows.length) { box.innerHTML = '<div class="ds-row">暂无数据</div>'; return; }
+    box.innerHTML = rows.map(function (r) {
+      var sp = r.special || {}, has = !!(sp.c || sp.z);
+      var hit = false;
+      if (has) {
+        var c = parseInt(sp.c, 10);
+        hit = ((r.oddEven === "单数") === (c % 2 === 1)) || (r.zodiacs || []).indexOf(sp.z) >= 0;
+      }
+      var st = has ? (hit ? "中" : "错") : "待";
+      return '<div class="ds-row">' + S.shortIssue(r.issue) + '期:单双 <span class="hl">【' + (r.oddEven || "") + '+' + (r.zodiacs || []).join("") + '】</span> 開:<span class="num">' + (has ? (sp.z || "") + S.pad2(sp.c || "") : "? 00") + '</span><span class="badge' + (st === "待" ? " w" : "") + '">' + st + '</span></div>';
+    }).join("");
+  }
+  function renderPick(rowsIn, specialMap) {
+    var box = document.getElementById("pick"); if (!box) return;
+    var rows = S.rowsAsc({ rows: rowsIn || [] }, 6);
+    if (!rows.length) { box.innerHTML = '<div class="pick-card"><div class="pick-hd">暂无数据</div></div>'; return; }
+    box.innerHTML = rows.map(function (r) {
+      var sp = specialMap[S.shortIssue(r.issue)] || null;
+      var label, cls = "";
+      if (sp && sp.z) {
+        var hitTier = 0;
+        if ((r.three && r.three.zodiac || []).indexOf(sp.z) >= 0) hitTier = 3;
+        else if ((r.five && r.five.zodiac || []).indexOf(sp.z) >= 0) hitTier = 5;
+        else if ((r.seven && r.seven.zodiac || []).indexOf(sp.z) >= 0) hitTier = 7;
+        label = hitTier ? ("中" + ["三","五","七"][hitTier === 3 ? 0 : (hitTier === 5 ? 1 : 2)] + "肖") : "未中";
+      } else {
+        label = (r.pick && r.pick.zodiac ? r.pick.zodiac : "?") + "-" + S.pad2((r.pick && r.pick.num) || "");
+      }
+      function zodLine(list, nums, mark) {
+        var z = (list || []).map(function (x) { return '<span class="' + (sp && sp.z === x ? "hit" : "") + '">' + x + '</span>'; }).join("");
+        var n = (nums || []).map(function (x) { return S.pad2(x); }).join(".");
+        var circ = { '七': '⑦', '五': '⑤', '三': '③' }[mark] || mark;
+        return '<div class="pick-row"><span class="k">' + mark + '肖:</span><span class="zv">' + z + '</span><span class="nv"><span class="k2">' + circ + '码:</span>' + n + '</span></div>';
+      }
+      return '<div class="pick-card"><div class="pick-hd">' + S.shortIssue(r.issue) + '期:内幕一肖一码<span class="hl">【' + label + '】</span>' + (sp && sp.z ? "重磅来袭" : "") + '</div>' +
+        '<div class="pick-wm">资料图位 · 占位水印</div>' +
+        zodLine(r.seven && r.seven.zodiac, r.seven && r.seven.nums, "七") +
+        zodLine(r.five && r.five.zodiac, r.five && r.five.nums, "五") +
+        zodLine(r.three && r.three.zodiac, r.three && r.three.nums, "三") +
+        '</div>';
+    }).join("");
+  }
   function renderZod() {
     var box = document.getElementById("zod");
     if (box) box.innerHTML = S.zodiacTableHtml();
@@ -140,13 +210,14 @@
     tick();
   }
   function boot() {
-    var want = ["data/site-config.json","data/draw.json","data/manual-draw.json","data/poems.json","data/num-attrs.json"]
+    var want = ["data/site-config.json","data/draw.json","data/manual-draw.json","data/poems.json","data/num-attrs.json","data/pick.json"]
       .concat(S.BLOCKS.map(function (b) { return b.file; }));
     Promise.all(want.map(function (p) { return S.get(p).catch(function () { return null; }); })).then(function (rs) {
       CFG = rs[0]; var draw = rs[1] || { games: [] }, md = rs[2] || {}, poems = rs[3], attrs = rs[4] || {};
       S.setAttrs(attrs);
       var blocks = {};
-      S.BLOCKS.forEach(function (b, i) { blocks[b.key] = rs[5 + i]; });
+      var pick = rs[5] || {};
+      S.BLOCKS.forEach(function (b, i) { blocks[b.key] = rs[6 + i]; });
       window.__blocks = blocks;
       var cur = S.mdCompat(md);
       D.newhk = cur;
@@ -158,6 +229,17 @@
       document.getElementById("today").textContent = (today.getMonth() + 1) + "月" + today.getDate() + "日 " + ["星期日","星期一","星期二","星期三","星期四","星期五","星期六"][today.getDay()];
       renderPoem(poems);
       renderAll(blocks);
+      try {
+        var smap = {};
+        (function () {
+          function add(iss, nums) { if (!iss || !nums || nums.length < 7) return; var last = nums[6]; if (last && last.z) smap[S.shortIssue(iss)] = { z: last.z, c: last.c }; }
+          var mm = S.mdCompat(md); add(mm.issue, mm.nums && mm.nums.length === 7 ? mm.nums : S.numsOf(mm));
+          (mm.history || []).forEach(function (h2) { add(h2.issue, h2.nums); });
+        })();
+        renderLiuxiao(blocks.liuxiao);
+        renderDanshuang(blocks.danshuang);
+        renderPick(pick.rows, smap);
+      } catch (eR) { if (window.console && console.log) console.log("block render error", eR); }
       tick(); setInterval(tick, 1000);
       var load = document.querySelector("#mods .loading"); if (load) load.remove();
       if (!CFG && !(D.newhk && D.newhk.issue) && !(D.newmo && D.newmo.issue) && !(D.hk && D.hk.issue)) S.showErr("开奖数据未取到（网络或接口异常），点重试");
