@@ -176,6 +176,11 @@
     return arr.rows.slice().sort(function (a, b) { return (parseInt(b.issue, 10) || 0) - (parseInt(a.issue, 10) || 0); }).slice(0, n || 5);
   }
 
+  function rowsAsc(arr, n) {
+    if (!arr || !arr.rows) return [];
+    return arr.rows.slice().sort(function (a, b) { return (parseInt(a.issue, 10) || 0) - (parseInt(b.issue, 10) || 0); }).slice(-(n || 6));
+  }
+
   function lastRow(arr) {
     var rs = latestRows(arr, 1);
     return rs.length ? rs[0] : null;
@@ -220,7 +225,7 @@
     get: get, dec: dec, mdCompat: mdCompat, numsOf: numsOf, colorOf: colorOf,
     zodiacOf: zodiacOf, shortIssue: shortIssue, pad2: pad2, nextDate: nextDate,
     fmtCountdown: fmtCountdown, drawTimes: drawTimes, nextDraw: nextDraw,
-    ballHtml: ballHtml, BLOCKS: BLOCKS, latestRows: latestRows, lastRow: lastRow,
+    ballHtml: ballHtml, BLOCKS: BLOCKS, latestRows: latestRows, rowsAsc: rowsAsc, lastRow: lastRow,
     setAttrs: setAttrs, zodiacTableHtml: zodiacTableHtml, attrMap: function () { return attrMap; },
     setLastSpecialZ: function (z) { lastSpecialZ = z; },
     el: el, els: els, showErr: showErr,

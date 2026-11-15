@@ -35,7 +35,7 @@
   "use strict";
   var S = window.SD;
   function blockHtml(b, arr) {
-    var rows = S.latestRows(arr, 6);
+    var rows = S.rowsAsc(arr, 6);
     var rule = (arr && (arr.rule || arr.note)) || "";
     var html = '<div class="zblock" id="' + b.key + '"><div class="zb-h">' + b.name + '<span>' + b.sub + '</span></div>';
     if (rule) html += '<div class="rule">' + rule + '</div>';
@@ -61,7 +61,7 @@
       S.BLOCKS.forEach(function (b, i) { html += blockHtml(b, rs[i]); });
       document.getElementById("blocks").innerHTML = html;
       var z = rs[rs.length - 2] || {};
-      var rows = (z.rows || []).slice(0, 12);
+      var rows = (z.rows || []).slice().sort(function (a, b) { return (parseInt(a.issue, 10) || 0) - (parseInt(b.issue, 10) || 0); }).slice(-12);
       document.getElementById("ziliao-rows").innerHTML = rows.length ? rows.map(function (r) {
         var res = r.result || {};
         var content = (r.oddEven || "") + " " + ((r.threeZodiac || []).join(""));
