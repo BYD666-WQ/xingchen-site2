@@ -225,7 +225,7 @@
     get: get, dec: dec, mdCompat: mdCompat, numsOf: numsOf, colorOf: colorOf,
     zodiacOf: zodiacOf, shortIssue: shortIssue, pad2: pad2, nextDate: nextDate,
     fmtCountdown: fmtCountdown, drawTimes: drawTimes, nextDraw: nextDraw,
-    ballHtml: ballHtml, BLOCKS: BLOCKS, latestRows: latestRows, rowsAsc: rowsAsc, lastRow: lastRow,
+    fresh: raceFetch, ballHtml: ballHtml, BLOCKS: BLOCKS, latestRows: latestRows, rowsAsc: rowsAsc, lastRow: lastRow,
     setAttrs: setAttrs, zodiacTableHtml: zodiacTableHtml, attrMap: function () { return attrMap; },
     setLastSpecialZ: function (z) { lastSpecialZ = z; },
     el: el, els: els, showErr: showErr,

@@ -35,6 +35,8 @@
 
   <div class="err" id="err"></div>
 
+  <div class="vf-prog" id="vf-prog" style="display:none"><span class="vf-txt" id="vf-txt">开奖中 0/7</span><span class="vf-track"><i id="vf-fill"></i></span></div>
+
   <div class="banner">
     <div class="big">本期<em>九板块</em>资料 · 已更新</div>
     <div class="sub" id="banner-sub">五肖五码 · 三头中特 · 七尾中特 · 平特①肖 · 死杀三肖</div>
@@ -62,8 +64,9 @@
   <div class="m-sub"><span class="bar"></span>成语平特<span class="k">近 6 期</span></div>
   <div class="ds" id="m-idiom"></div>
 
-  <div class="sec-hd" style="margin:10px 6px 2px"><span class="bar"></span><b>历史开奖</b><span class="k">近 5 期</span></div>
+  <div class="sec-hd" style="margin:10px 6px 2px"><span class="bar"></span><b>历史开奖</b><span class="k" id="hist-k">近 5 期</span></div>
   <div class="rows" id="hist"></div>
+  <div class="hist-toggle"><button id="hist-toggle">展开全部</button></div>
 
   <section class="poem" id="poem">
     <span class="t">玄机诗象</span>
@@ -96,8 +99,63 @@
     if (!container) return;
     container.innerHTML = S.ballHtml(nums, attrs);
   }
+  var VF = null, HIST_EXPANDED = false;
+  function grayBalls() {
+    var h2 = "";
+    for (var i = 0; i < 7; i++) h2 += '<div class="ball revealing"><span class="n">?</span><span class="z">?</span></div>';
+    return h2;
+  }
+  function partialBalls(nums, n) {
+    var h2 = "";
+    for (var i = 0; i < 7; i++) {
+      if (i === 6) h2 += '<span class="plus" style="flex:0 0 8px;align-self:center;font-weight:900;color:#7A6000">+</span>';
+      if (i < n && nums[i]) {
+        var c = S.colorOf(nums[i].c);
+        h2 += '<div class="ball ' + c + (i === 6 ? " j" : "") + '"><span class="n">' + S.pad2(nums[i].c) + '</span><span class="z">' + (nums[i].z || "") + '</span></div>';
+      } else {
+        h2 += '<div class="ball revealing"><span class="n">?</span><span class="z">?</span></div>';
+      }
+    }
+    return h2;
+  }
+  function vfN() {
+    if (!VF) return 7;
+    var el = Date.now() - VF.start, n = 0;
+    for (var i = 0; i < VF.tl.length; i++) if (el >= VF.tl[i]) n++;
+    return n;
+  }
+  function setupVF(md) {
+    VF = null;
+    var cur = S.mdCompat(md || {});
+    var nums = S.numsOf(cur);
+    if (!cur.issue || nums.length !== 7 || !cur.visibleFrom) return;
+    var start = new Date(cur.visibleFrom).getTime();
+    if (!isFinite(start)) return;
+    var cfg = (CFG && CFG.reveal) || { mode: "fixed", seconds: 10, min: 8, max: 15, specialExtra: 5 };
+    var tl = [1500], t = 1500;
+    for (var i = 1; i <= 6; i++) {
+      var gap = cfg.seconds || 10;
+      if (cfg.mode === "random") gap = (cfg.min || 8) + ((i * 2654435) % ((cfg.max || 15) - (cfg.min || 8) + 1));
+      t += gap * 1000;
+      if (i === 6) t += (cfg.specialExtra || 0) * 1000;
+      tl.push(t);
+    }
+    VF = { issue: cur.issue, nums: nums, start: start, tl: tl, total: tl[6] + 10000 };
+  }
   function renderOpen() {
     var d = D[CUR] || {};
+    if (CUR === "newhk" && VF) {
+      document.getElementById("ob-issue").textContent = S.shortIssue(VF.issue) + "期开";
+      var n = vfN();
+      if (n >= 7) {
+        setBalls(document.getElementById("ob-balls"), VF.nums, S.attrMap());
+        S.setLastSpecialZ(VF.nums[6] && VF.nums[6].z ? VF.nums[6].z : "");
+      } else {
+        document.getElementById("ob-balls").innerHTML = n > 0 ? partialBalls(VF.nums, n) : grayBalls();
+        S.setLastSpecialZ("");
+      }
+      return;
+    }
     var nums = (d.nums && d.nums.length) ? d.nums : S.numsOf(d);
     var iss = d.issue != null ? d.issue : "";
     document.getElementById("ob-issue").textContent = (iss ? S.shortIssue(iss) : "--") + "期开";
@@ -108,18 +166,63 @@
     document.getElementById("draw-hint").textContent = (S.drawTimes(CFG)[CUR] || {}).time || hint[CUR];
   }
   function renderHist() {
-    var d = D[CUR] || {}, out = "";
-    var hist = ((d.history || []).slice(0, 5));
-    if (!hist.length) { out = '<div class="row"><span class="iss">—</span><span class="t">暂无历史数据</span></div>'; }
-    hist.forEach(function (h) {
+    var all = (window.__histData && window.__histData[CUR]) || [];
+    var out = "";
+    if (!all.length) {
+      document.getElementById("hist").innerHTML = '<div class="row"><span class="iss">—</span><span class="t">暂无历史数据</span></div>';
+      return;
+    }
+    var show = HIST_EXPANDED ? all : all.slice(0, 5);
+    show.forEach(function (h) {
       var nums = h.nums || [];
-      var balls = nums.map(function (x, i) {
-        var plus = (i === 6) ? '<span class="v" style="color:#7A6000">+</span> ' : '';
-        return plus + '<span class="v" style="color:' + (S.colorOf(x.c) === "r" ? "#D40000" : (S.colorOf(x.c) === "b" ? "#0044CC" : "#067A2E")) + '">' + S.pad2(x.c) + '</span>';
-      }).join(" ");
+      var balls = "";
+      if (!nums.length) { balls = '<span class="v" style="color:#8A7458">？</span> <span class="v" style="color:#8A7458">？</span> <span class="v" style="color:#8A7458">？</span> <span class="v" style="color:#8A7458">？</span> <span class="v" style="color:#8A7458">？</span> <span class="v" style="color:#8A7458">？</span> <span class="v" style="color:#7A6000">+</span> <span class="v" style="color:#8A7458">？</span>'; }
+      else {
+        for (var i = 0; i < 7; i++) {
+          var x = nums[i];
+          if (i === 6) balls += '<span class="v" style="color:#7A6000">+</span> ';
+          if (!x) { balls += '<span class="v" style="color:#8A7458">？</span> '; continue; }
+          var c = S.colorOf(x.c);
+          balls += '<span class="v" style="color:' + (c === "r" ? "#D40000" : (c === "b" ? "#0044CC" : "#067A2E")) + '">' + S.pad2(x.c) + '</span> ';
+        }
+      }
       out += '<div class="row" style="padding-right:6px"><span class="iss">' + S.shortIssue(h.issue) + '期:</span><span class="c" style="flex:1;font-size:10.5px">' + balls + '</span><span class="r">' + (nums[6] && nums[6].z ? "特" + nums[6].z : "") + '</span></div>';
     });
     document.getElementById("hist").innerHTML = out;
+    var k = document.getElementById("hist-k");
+    if (k) k.textContent = HIST_EXPANDED ? ("全部 " + all.length + " 期") : "近 5 期";
+    var btn = document.getElementById("hist-toggle");
+    if (btn) {
+      if (all.length <= 5) { btn.style.display = "none"; }
+      else { btn.style.display = "block"; btn.textContent = HIST_EXPANDED ? "收起（只看近 5 期）" : ("展开全部（" + all.length + " 期）"); }
+    }
+  }
+  function buildHistData(md, draw) {
+    var map = {};
+    function put(iss, nums) { if (!iss || !nums || nums.length !== 7) return; var k = S.shortIssue(iss); if (!map[k]) map[k] = nums; }
+    var mm = S.mdCompat(md || {});
+    put(mm.issue, S.numsOf(mm));
+    (mm.history || []).forEach(function (x) { put(x.issue, x.nums); });
+    (draw.games || []).forEach(function (g) { put(g.issue, g.nums); (g.history || []).forEach(function (x) { put(x.issue, x.nums); }); });
+    window.__allMap = map;
+    function listFor(curIssue, hist) {
+      var out = [], seen = {};
+      function add(iss, nums) {
+        var k = S.shortIssue(iss); if (!k || seen[k]) return; seen[k] = 1;
+        var nn = (nums && nums.length === 7) ? nums : (map[k] || []);
+        out.push({ issue: iss, nums: nn });
+      }
+      add(curIssue, null); (hist || []).forEach(function (x) { add(x.issue, x.nums); });
+      out.sort(function (a, b) { return (parseInt(S.shortIssue(b.issue), 10) || 0) - (parseInt(S.shortIssue(a.issue), 10) || 0); });
+      return out;
+    }
+    var games = {};
+    (draw.games || []).forEach(function (g) { games[g.rule] = g; });
+    window.__histData = {
+      newhk: listFor(mm.issue, mm.history),
+      newmo: games.Macau ? listFor(games.Macau.issue, games.Macau.history) : [],
+      hk: games.HongKong ? listFor(games.HongKong.issue, games.HongKong.history) : []
+    };
   }
   function renderMods(blocks) {
     var box = document.getElementById("mods"), out = "";
@@ -306,12 +409,39 @@
     renderOpen(); renderHist(); renderMods(blocks); renderZod();
   }
   function tick() {
+    var cd = document.getElementById("cd"), hint = document.getElementById("draw-hint"), prog = document.getElementById("vf-prog");
+    if (CUR === "newhk" && VF) {
+      var el = Date.now() - VF.start;
+      if (el < 0) {
+        if (cd) cd.textContent = S.fmtCountdown(-el);
+        if (hint) hint.textContent = "待开";
+        if (prog) prog.style.display = "none";
+      } else {
+        var n = vfN();
+        if (n < 7) {
+          if (prog) {
+            prog.style.display = "flex";
+            var tx = document.getElementById("vf-txt"), fl = document.getElementById("vf-fill");
+            if (tx) tx.textContent = "开奖中 " + n + "/7";
+            if (fl) fl.style.width = Math.round(n / 7 * 100) + "%";
+          }
+          if (cd) cd.textContent = "开奖中";
+          if (hint) hint.textContent = "开奖中";
+        } else {
+          if (prog) prog.style.display = "none";
+          if (cd) cd.textContent = S.fmtCountdown(S.nextDraw("newhk", CFG) - Date.now());
+          if (hint) hint.textContent = (S.drawTimes(CFG).newhk || {}).time || "21:34";
+        }
+        renderOpen();
+      }
+      return;
+    }
+    if (prog) prog.style.display = "none";
     var t = S.nextDraw(CUR, CFG), left = t - new Date();
-    var cd = document.getElementById("cd");
     if (cd) cd.textContent = S.fmtCountdown(left);
   }
   function show(k) {
-    CUR = k;
+    CUR = k; HIST_EXPANDED = false;
     S.els("#tabs button").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-k") === k); });
     renderAll(window.__blocks || {});
     tick();
@@ -332,6 +462,9 @@
       (draw.games || []).forEach(function (g) { games[g.rule] = g; });
       D.newmo = games.Macau || null;
       D.hk = games.HongKong || null;
+      buildHistData(md, draw);
+      setupVF(md);
+      window.__lastMd = md; window.__lastDraw = draw;
       var today = new Date();
       document.getElementById("today").textContent = (today.getMonth() + 1) + "月" + today.getDate() + "日 " + ["星期日","星期一","星期二","星期三","星期四","星期五","星期六"][today.getDay()];
       renderPoem(poems);
@@ -353,6 +486,32 @@
         renderMoreData(blocks, smap);
       } catch (eR) { if (window.console && console.log) console.log("block render error", eR); }
       tick(); setInterval(tick, 1000);
+      var hb = document.getElementById("hist-toggle");
+      if (hb && !hb.__bound) { hb.__bound = 1; hb.addEventListener("click", function () { HIST_EXPANDED = !HIST_EXPANDED; renderHist(); }); }
+      window.__vfDemo = function () {
+        var rows = (window.__histData && window.__histData.newhk) || [];
+        if (!rows.length) return false;
+        VF = { issue: rows[0].issue, nums: rows[0].nums, start: Date.now() - 1000, tl: [1500, 11500, 21500, 31500, 41500, 51500, 66500], total: 76500 };
+        renderOpen(); tick(); return true;
+      };
+      function refreshData() {
+        Promise.all([
+          S.fresh("data/manual-draw.json").catch(function () { return null; }),
+          S.fresh("data/draw.json").catch(function () { return null; }),
+          S.fresh("data/site-config.json").catch(function () { return null; })
+        ]).then(function (rs) {
+          var md2 = rs[0] || window.__lastMd || {}, draw2 = rs[1] || window.__lastDraw || {}, cfg2 = rs[2];
+          if (cfg2) CFG = cfg2;
+          window.__lastMd = md2; window.__lastDraw = draw2;
+          var g2 = {}; (draw2.games || []).forEach(function (g) { g2[g.rule] = g; });
+          D.newmo = g2.Macau || D.newmo; D.hk = g2.HongKong || D.hk;
+          D.newhk = S.mdCompat(md2);
+          buildHistData(md2, draw2);
+          setupVF(md2);
+          renderAll(window.__blocks || {});
+        }).catch(function () {});
+      }
+      setInterval(refreshData, 30000);
       var load = document.querySelector("#mods .loading"); if (load) load.remove();
       if (!CFG && !(D.newhk && D.newhk.issue) && !(D.newmo && D.newmo.issue) && !(D.hk && D.hk.issue)) S.showErr("开奖数据未取到（网络或接口异常），点重试");
     }).catch(function (e) {

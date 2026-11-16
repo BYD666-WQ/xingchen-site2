@@ -175,3 +175,14 @@ a{color:inherit;text-decoration:none}
 .m-sub{display:flex;align-items:center;gap:6px;margin:8px 6px 4px;font-weight:900;font-size:13px}
 .m-sub .bar{width:5px;height:13px;background:#1E63B8;border:1px solid #111}
 .m-sub .k{margin-left:auto;font-size:9px;color:#7A6000}
+/* ===== 开奖中进度 + 历史展开 ===== */
+.vf-prog{display:flex;align-items:center;gap:8px;margin:6px 6px 0;padding:6px 8px;background:#FFF9C4;border:3px solid #111;box-shadow:3px 3px 0 rgba(0,0,0,.25);font-weight:900;font-size:11px;color:#8A5A00}
+.vf-prog .vf-txt{white-space:nowrap}
+.vf-track{flex:1;height:10px;background:#FFE500;border:2px solid #111;overflow:hidden}
+.vf-track i{display:block;height:100%;width:0;background:linear-gradient(90deg,#D40000,#F2681C)}
+.hist-toggle{display:flex;justify-content:center;margin:4px 6px 0}
+.hist-toggle button{width:100%;border:3px solid #111;background:#FFF9C4;color:#D40000;font-weight:900;font-size:12px;padding:6px 0;box-shadow:3px 3px 0 rgba(0,0,0,.25)}
+.hist-toggle button:active{transform:translate(1px,1px);box-shadow:1px 1px 0 rgba(0,0,0,.25)}
+.ball.revealing .n{background:#9E9E9E!important;border-color:#666!important;box-shadow:none!important;color:#fff!important}
+.ball.revealing.j .n{background:#9E9E9E!important;border-color:#666!important}
+.ball.revealing .z{color:#8A7458!important;font-weight:700}
