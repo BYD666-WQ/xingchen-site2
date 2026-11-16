@@ -491,7 +491,7 @@
       window.__vfDemo = function () {
         var rows = (window.__histData && window.__histData.newhk) || [];
         if (!rows.length) return false;
-        VF = { issue: rows[0].issue, nums: rows[0].nums, start: Date.now() - 1000, tl: [1500, 11500, 21500, 31500, 41500, 51500, 66500], total: 76500 };
+        VF = { issue: rows[0].issue, nums: rows[0].nums, start: Date.now(), tl: [1500, 11500, 21500, 31500, 41500, 51500, 66500], total: 76500 };
         renderOpen(); tick(); return true;
       };
       function refreshData() {
