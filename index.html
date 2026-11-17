@@ -17,7 +17,7 @@
   </header>
 
   <section class="kaijiang">
-    <div class="kj-left"><div class="p" id="ob-issue">---期开</div><div class="rec">开奖记录</div></div>
+    <div class="kj-left"><div class="p" id="ob-issue">---期开</div><button class="rec" id="btn-rec" type="button">开奖记录</button></div>
     <div class="kj-right"><div class="balls" id="ob-balls"></div></div>
   </section>
 
@@ -31,6 +31,12 @@
     <span class="k">今</span><span id="today">--</span>
     <span id="draw-hint">21:34 开奖</span>
     <span class="cd" id="cd">--:--:--</span>
+  </div>
+
+  <div class="toolbar">
+    <button id="btn-refresh" class="rf" type="button"><span class="ic">⟳</span><span id="rf-label">刷新</span></button>
+    <span class="upd" id="upd">更新 --:--:--</span>
+    <span class="rf-msg" id="rf-msg"></span>
   </div>
 
   <div class="err" id="err"></div>
@@ -446,6 +452,73 @@
     renderAll(window.__blocks || {});
     tick();
   }
+  function setUpdateStamp() {
+    var u = document.getElementById("upd");
+    if (u) { var d = new Date(); u.textContent = "更新 " + S.pad2(d.getHours()) + ":" + S.pad2(d.getMinutes()) + ":" + S.pad2(d.getSeconds()); }
+  }
+  function buildSmap(md, draw) {
+    var smap = {};
+    function add(iss, nums) { if (!iss || !nums || nums.length < 7) return; var last = nums[6]; if (last && last.z) smap[S.shortIssue(iss)] = { z: last.z, c: last.c }; }
+    var mm = S.mdCompat(md || {});
+    add(mm.issue, mm.nums && mm.nums.length === 7 ? mm.nums : S.numsOf(mm));
+    (mm.history || []).forEach(function (h2) { add(h2.issue, h2.nums); });
+    ((draw || {}).games || []).forEach(function (g) {
+      function addIf(iss, nums) { if (!iss || !nums || nums.length < 7) return; var k = S.shortIssue(iss); if (smap[k]) return; var last = nums[6]; if (last && last.z) smap[k] = { z: last.z, c: last.c }; }
+      addIf(g.issue, g.nums); (g.history || []).forEach(function (h2) { addIf(h2.issue, h2.nums); });
+    });
+    return smap;
+  }
+  function refreshAll(silent) {
+    var btn = document.getElementById("btn-refresh"), lab = document.getElementById("rf-label"), msg = document.getElementById("rf-msg");
+    if (!silent && btn) { btn.disabled = true; btn.classList.add("busy"); if (lab) lab.textContent = "刷新中…"; if (msg) msg.textContent = ""; }
+    var paths = silent ? ["data/site-config.json", "data/draw.json", "data/manual-draw.json"] : ["data/site-config.json", "data/draw.json", "data/manual-draw.json", "data/poems.json", "data/num-attrs.json", "data/pick.json"].concat(S.BLOCKS.map(function (b) { return b.file; }));
+    return Promise.all(paths.map(function (p) { return S.fresh(p).catch(function () { return null; }); })).then(function (rs) {
+      var cfg = rs[0], draw = rs[1], md = rs[2], poems = rs[3], attrs = rs[4], pick = rs[5] || {};
+      if (!cfg && !draw && !md) throw new Error("数据源不可用");
+      if (cfg) CFG = cfg;
+      if (attrs) S.setAttrs(attrs);
+      var blocks = silent ? (window.__blocks || {}) : {};
+      if (!silent) { S.BLOCKS.forEach(function (b, i) { blocks[b.key] = rs[6 + i]; }); window.__blocks = blocks; }
+      var mm = S.mdCompat(md || {});
+      D.newhk = mm;
+      var g2 = {}; ((draw || {}).games || []).forEach(function (g) { g2[g.rule] = g; });
+      D.newmo = g2.Macau || D.newmo; D.hk = g2.HongKong || D.hk;
+      window.__lastMd = md; window.__lastDraw = draw;
+      buildHistData(md || {}, draw || {});
+      setupVF(md || {});
+      if (poems) renderPoem(poems);
+      renderAll(silent ? (window.__blocks || {}) : blocks);
+      if (!silent) {
+        var smap = buildSmap(md || {}, draw || {});
+        try {
+          renderLiuxiao(blocks.liuxiao, smap);
+          renderDanshuang(blocks.danshuang, smap);
+          renderPick(pick.rows, smap);
+          renderMoreData(blocks, smap);
+        } catch (e) {}
+      }
+      var today = new Date();
+      document.getElementById("today").textContent = (today.getMonth() + 1) + "月" + today.getDate() + "日 " + ["星期日","星期一","星期二","星期三","星期四","星期五","星期六"][today.getDay()];
+      setUpdateStamp();
+      if (!silent) {
+        if (btn) { btn.disabled = false; btn.classList.remove("busy"); }
+        if (lab) lab.textContent = "刷新";
+        if (msg) { msg.textContent = "已更新"; setTimeout(function () { if (msg) msg.textContent = ""; }, 2000); }
+      }
+    }).catch(function () {
+      if (!silent) {
+        if (btn) { btn.disabled = false; btn.classList.remove("busy"); }
+        if (lab) lab.textContent = "刷新";
+        if (msg) { msg.textContent = "刷新失败，稍后重试"; setTimeout(function () { if (msg) msg.textContent = ""; }, 4000); }
+      }
+    });
+  }
+  function bindRefresh() {
+    var btn = document.getElementById("btn-refresh");
+    if (btn && !btn.__bound) { btn.__bound = 1; btn.addEventListener("click", function () { refreshAll(false); }); }
+    var rec = document.getElementById("btn-rec");
+    if (rec && !rec.__bound) { rec.__bound = 1; rec.addEventListener("click", function () { HIST_EXPANDED = true; renderHist(); var hist = document.getElementById("hist"); if (hist) hist.scrollIntoView({ behavior: "smooth", block: "center" }); }); }
+  }
   function boot() {
     var want = ["data/site-config.json","data/draw.json","data/manual-draw.json","data/poems.json","data/num-attrs.json","data/pick.json"]
       .concat(S.BLOCKS.map(function (b) { return b.file; }));
@@ -470,16 +543,7 @@
       renderPoem(poems);
       renderAll(blocks);
       try {
-        var smap = {};
-        (function () {
-          function add(iss, nums) { if (!iss || !nums || nums.length < 7) return; var last = nums[6]; if (last && last.z) smap[S.shortIssue(iss)] = { z: last.z, c: last.c }; }
-          var mm = S.mdCompat(md); add(mm.issue, mm.nums && mm.nums.length === 7 ? mm.nums : S.numsOf(mm));
-          (mm.history || []).forEach(function (h2) { add(h2.issue, h2.nums); });
-          (draw.games || []).forEach(function (g) {
-            function addIf(iss, nums) { if (!iss || !nums || nums.length < 7) return; var k = S.shortIssue(iss); if (smap[k]) return; var last = nums[6]; if (last && last.z) smap[k] = { z: last.z, c: last.c }; }
-            addIf(g.issue, g.nums); (g.history || []).forEach(function (h2) { addIf(h2.issue, h2.nums); });
-          });
-        })();
+        var smap = buildSmap(md, draw);
         renderLiuxiao(blocks.liuxiao, smap);
         renderDanshuang(blocks.danshuang, smap);
         renderPick(pick.rows, smap);
@@ -494,24 +558,9 @@
         VF = { issue: rows[0].issue, nums: rows[0].nums, start: Date.now(), tl: [1500, 11500, 21500, 31500, 41500, 51500, 66500], total: 76500 };
         renderOpen(); tick(); return true;
       };
-      function refreshData() {
-        Promise.all([
-          S.fresh("data/manual-draw.json").catch(function () { return null; }),
-          S.fresh("data/draw.json").catch(function () { return null; }),
-          S.fresh("data/site-config.json").catch(function () { return null; })
-        ]).then(function (rs) {
-          var md2 = rs[0] || window.__lastMd || {}, draw2 = rs[1] || window.__lastDraw || {}, cfg2 = rs[2];
-          if (cfg2) CFG = cfg2;
-          window.__lastMd = md2; window.__lastDraw = draw2;
-          var g2 = {}; (draw2.games || []).forEach(function (g) { g2[g.rule] = g; });
-          D.newmo = g2.Macau || D.newmo; D.hk = g2.HongKong || D.hk;
-          D.newhk = S.mdCompat(md2);
-          buildHistData(md2, draw2);
-          setupVF(md2);
-          renderAll(window.__blocks || {});
-        }).catch(function () {});
-      }
-      setInterval(refreshData, 30000);
+      bindRefresh();
+      setUpdateStamp();
+      setInterval(function () { if (!document.hidden) refreshAll(true); }, 30000);
       var load = document.querySelector("#mods .loading"); if (load) load.remove();
       if (!CFG && !(D.newhk && D.newhk.issue) && !(D.newmo && D.newmo.issue) && !(D.hk && D.hk.issue)) S.showErr("开奖数据未取到（网络或接口异常），点重试");
     }).catch(function (e) {
