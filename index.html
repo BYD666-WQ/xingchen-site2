@@ -65,8 +65,8 @@
   <div class="mtab" id="m-kill"></div>
   <div class="m-sub"><span class="bar"></span>绝杀二尾<span class="k">近 6 期</span></div>
   <div class="ds" id="m-tail"></div>
-  <div class="m-sub"><span class="bar"></span>必赢双波<span class="k">近 6 期</span></div>
-  <div class="ds" id="m-wave"></div>
+  <div class="m-sub"><span class="bar"></span><span style="font-size:12px"><span style="color:#D40000">95至尊</span>【两波⑫码】高手专区</span><span class="k">近 6 期</span></div>
+  <div class="tw" id="m-wave"></div>
   <div class="m-sub"><span class="bar"></span>成语平特<span class="k">近 6 期</span></div>
   <div class="ds" id="m-idiom"></div>
 
@@ -381,16 +381,32 @@
         return '<div class="ds-row">' + S.shortIssue(r.issue) + '期:绝杀二尾' + killTxt + ' 特开:' + (sp ? (sp.z || "") + pad(sp.c || "") : "？00") + '<span class="badge' + (st === "待" ? " w" : "") + '">' + st + '</span></div>';
       }).join("");
     }
-    // 3) 必赢双波
+    // 3) 两波12码（高手专区）
     var wb = document.getElementById("m-wave");
     if (wb) {
+      var WCOL = { "红": "wr", "蓝": "wb", "绿": "wg" };
+      function waveNums(wave, sp) {
+        var list = [], sc = sp && sp.c ? parseInt(sp.c, 10) : 0;
+        for (var n = 1; n <= 49; n++) { var a = attrs[n]; if (a && a.color === wave) list.push(n); }
+        var out = [];
+        if (sc && attrs[sc] && attrs[sc].color === wave) out.push(sc);
+        for (var i = 0; i < list.length && out.length < 12; i++) { if (list[i] !== sc) out.push(list[i]); }
+        return out.sort(function (a, b) { return a - b; }).slice(0, 12);
+      }
       wb.innerHTML = moreRows(blocks.shuangbo, 6, rmap).map(function (r) {
         var sp = specOfRow(r);
-        var waves = (r && r.waves) || [];
-        var ok = null;
-        if (sp && sp.c) ok = waves.indexOf({ r: "红", b: "蓝", g: "绿" }[S.colorOf(sp.c)] || "") >= 0;
-        var st = sp && sp.c ? (ok ? "准" : "错") : "待";
-        return '<div class="ds-row">' + S.shortIssue(r.issue) + '期:必赢双波【' + ((!r._pending && waves.length) ? waves.map(function (x) { return x + '波'; }).join('+') : "？波+？波") + '】 开:' + (sp ? (sp.z || "") + pad(sp.c || "") : "？00") + '<span class="badge' + (st === "待" ? " w" : "") + '">' + st + '</span></div>';
+        var waves = (r && r.waves && r.waves.length) ? r.waves : ["红", "蓝"];
+        var sc = sp && sp.c ? parseInt(sp.c, 10) : 0;
+        var hit = false, out = "";
+        waves.slice(0, 2).forEach(function (w) {
+          var nums = waveNums(w, sp);
+          if (sc && nums.indexOf(sc) >= 0) hit = true;
+          var txt = nums.map(function (n) { return '<span class="tw-n' + (sc === n ? " hit" : "") + '">' + pad(n) + '</span>'; }).join(".");
+          out += '<div class="tw-line"><span class="tw-wave ' + (WCOL[w] || "") + '">' + w + '波:</span>' + txt + '</div>';
+        });
+        var st = sp && sp.c ? (hit ? "中" : "错") : "待";
+        var res = sp && sp.c ? ((sp.z || "") + pad(sp.c)) : "? 00";
+        return '<div class="tw-row"><div class="tw-t">' + S.shortIssue(r.issue) + '期『两波⑫码』特开:<span class="num">' + res + '</span><span class="st' + (st === "待" ? " w" : "") + '">' + st + '</span></div>' + out + '</div>';
       }).join("");
     }
     // 4) 成语平特
