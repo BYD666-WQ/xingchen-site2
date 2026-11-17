@@ -65,7 +65,7 @@
   <div class="mtab" id="m-kill"></div>
   <div class="m-sub"><span class="bar"></span>绝杀二尾<span class="k">近 6 期</span></div>
   <div class="ds" id="m-tail"></div>
-  <div class="m-sub"><span class="bar"></span><span style="font-size:12px"><span style="color:#D40000">95至尊</span>【两波⑫码】高手专区</span><span class="k">近 6 期</span></div>
+  <div class="m-sub"><span class="bar"></span><span style="font-size:14.5px"><span style="color:#D40000">95至尊</span>【两波⑫码】高手专区</span><span class="k">近 6 期</span></div>
   <div class="tw" id="m-wave"></div>
   <div class="m-sub"><span class="bar"></span>成语平特<span class="k">近 6 期</span></div>
   <div class="ds" id="m-idiom"></div>
@@ -401,8 +401,10 @@
         waves.slice(0, 2).forEach(function (w) {
           var nums = waveNums(w, sp);
           if (sc && nums.indexOf(sc) >= 0) hit = true;
-          var txt = nums.map(function (n) { return '<span class="tw-n' + (sc === n ? " hit" : "") + '">' + pad(n) + '</span>'; }).join(".");
-          out += '<div class="tw-line"><span class="tw-wave ' + (WCOL[w] || "") + '">' + w + '波:</span>' + txt + '</div>';
+          var txt = nums.map(function (n, idx) {
+            return '<span class="tw-item"><span class="tw-n' + (sc === n ? " hit" : "") + '">' + pad(n) + '</span>' + (idx < nums.length - 1 ? '<span class="tw-dot">.</span>' : '') + '</span>';
+          }).join("");
+          out += '<div class="tw-line"><span class="tw-wave ' + (WCOL[w] || "") + '">' + w + '波:</span><span class="tw-nums">' + txt + '</span></div>';
         });
         var st = sp && sp.c ? (hit ? "中" : "错") : "待";
         var res = sp && sp.c ? ((sp.z || "") + pad(sp.c)) : "? 00";
