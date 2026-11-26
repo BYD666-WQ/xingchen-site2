@@ -331,18 +331,27 @@
     }).join("");
   }
   var IDIOM_BY_ZOD = { "马": "马到成功", "龙": "龙马精神", "蛇": "金蛇献瑞", "羊": "三羊开泰", "猴": "金猴献瑞", "鸡": "闻鸡起舞", "狗": "犬守平安", "猪": "猪事顺利", "兔": "守株待兔", "虎": "虎虎生威", "牛": "牛气冲天", "鼠": "鼠兆丰年" };
+  function specialVisibleAt2(issue){
+    try{var md=window.__lastMd||{};var cur=md.current||md;var h0=(md.history&&md.history[0])||null;var bi=parseInt((h0&&h0.issue)||cur.issue,10)||0;var br=(h0&&h0.visibleFrom)||cur.visibleFrom||'';var ci=parseInt(cur.issue,10)||0;
+      if(!bi||!br)return (parseInt(issue,10)||0)<ci?new Date(0):new Date(Date.now()+86400000);
+      var b=new Date(br);if(isNaN(b.getTime()))return (parseInt(issue,10)||0)<ci?new Date(0):new Date(Date.now()+86400000);
+      return new Date(b.getTime()+((parseInt(issue,10)||bi)-bi)*86400000+3600000);
+    }catch(e){return new Date(0)}
+  }
   function moreRows(arr, n, rmap) {
     var raw = (arr && arr.rows) || [];
     var rr = S.rowsAsc(arr, n);
     var latest = rr.length ? parseInt(rr[rr.length - 1].issue, 10) : 0;
-    if (latest && !hasIssue(arr, latest + 1)) rr = rr.concat([{ issue: latest + 1, _pending: true }]);
+    var ci=parseInt(((window.__lastMd&&window.__lastMd.current)||{}).issue,10)||0;
+    if(ci&&!rr.some(function(x){return String(x.issue)===String(ci)}))rr=rr.concat([{issue:ci,_pending:true}]);
+    else if (latest && !hasIssue(arr, latest + 1)) rr = rr.concat([{ issue: latest + 1, _pending: true }]);
     return rr;
   }
   function renderMoreData(blocks, rmap) {
     var attrs = S.attrMap();
     function numsOfZod(z) { var out = []; for (var n = 1; n <= 49; n++) { var a = attrs[n]; if (a && a.zodiac === z) out.push(n); } return out; }
     function pad(n) { return S.pad2(n); }
-    function specOfRow(r) { return r._pending ? null : (specOf(r, rmap) || null); }
+    function specOfRow(r) { if(r&&r.issue!=null&&Date.now()<specialVisibleAt2(r.issue).getTime())return null; return r._pending ? null : (specOf(r, rmap) || null); }
     function resTxt(sp) { return sp && (sp.c || sp.z) ? ("开:" + (sp.z || "") + pad(sp.c || "")) : "开:？00"; }
     function hitBadge(ok) { return '<span class="badge' + (ok ? "" : " w") + '">' + (ok ? "准" : "错") + '</span>'; }
     // 1) 精准杀码料
