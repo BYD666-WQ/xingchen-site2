@@ -477,13 +477,14 @@
   }
   function show(k) {
     CUR = k; HIST_EXPANDED = false;
+    try{var bn=document.querySelector('.banner');if(bn)bn.style.display=(k==='newhk'?'':'none');var md9=document.getElementById('mods');if(md9)md9.style.display=(k==='newhk'?'':'none')}catch(e){}
     S.els("#tabs button").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-k") === k); });
     renderAll(window.__blocks || {});
     tick();
   }
   function setUpdateStamp() {
     var u = document.getElementById("upd");
-    if (u) { var d = new Date(); u.textContent = "更新 " + S.pad2(d.getHours()) + ":" + S.pad2(d.getMinutes()) + ":" + S.pad2(d.getSeconds()); }
+    if (u) { var raw=(window.__lastMd||{}).updated||"", d=raw?new Date(raw):null; if(d&&!isNaN(d.getTime()))u.textContent="更新 "+S.pad2(d.getMonth()+1)+"-"+S.pad2(d.getDate())+" "+S.pad2(d.getHours())+":"+S.pad2(d.getMinutes()); else u.textContent="更新 --"; }
   }
   function buildSmap(md, draw) {
     var smap = {};
