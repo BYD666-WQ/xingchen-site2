@@ -162,8 +162,10 @@
       }
       return;
     }
-    var nums = (d.nums && d.nums.length) ? d.nums : S.numsOf(d);
-    var iss = d.issue != null ? d.issue : "";
+    var disp=d;
+    if(!(d.nums&&d.nums.length===7)&&d.history&&d.history[0]&&(d.history[0].nums||[]).length===7)disp=d.history[0];
+    var nums = (disp.nums && disp.nums.length) ? disp.nums : S.numsOf(disp);
+    var iss = disp.issue != null ? disp.issue : "";
     document.getElementById("ob-issue").textContent = (iss ? S.shortIssue(iss) : "--") + "期开";
     setBalls(document.getElementById("ob-balls"), nums, S.attrMap());
     var sp = nums[6] && nums[6].z ? nums[6].z : "";
@@ -351,7 +353,7 @@
     var attrs = S.attrMap();
     function numsOfZod(z) { var out = []; for (var n = 1; n <= 49; n++) { var a = attrs[n]; if (a && a.zodiac === z) out.push(n); } return out; }
     function pad(n) { return S.pad2(n); }
-    function specOfRow(r) { if(r&&r.issue!=null&&Date.now()<specialVisibleAt2(r.issue).getTime())return null; return r._pending ? null : (specOf(r, rmap) || null); }
+    function specOfRow(r) { if(r&&r.issue!=null&&Date.now()<specialVisibleAt2(r.issue).getTime())return {z:'待开',c:'',_pending:true}; if(r&&r._pending)return {z:'待开',c:'',_pending:true}; return (specOf(r, rmap) || null); }
     function resTxt(sp) { return sp && (sp.c || sp.z) ? ("开:" + (sp.z || "") + pad(sp.c || "")) : "开:？00"; }
     function hitBadge(ok) { return '<span class="badge' + (ok ? "" : " w") + '">' + (ok ? "准" : "错") + '</span>'; }
     // 1) 精准杀码料
